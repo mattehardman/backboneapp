@@ -2,53 +2,68 @@
 <html>
 	<head>
 		<title>Backbone App</title>
+		<style>
+			li{list-style:none;border-bttom:1px #cccccc dashed;padding:10px 0 10px 0}
+			h3{padding:8px;background:#f5f5f5;}
+		</style>
 	</head>
 	<body>
-		<div id="user_container"></div>
+		<h3>User List</h3>
+		<ul class="users"/>
 		
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.2.3/backbone-min.js"></script>
 		
+		<script type="text/template" id="userlist_template">
+			<li>
+				<strong>Username:</strong> <%= username %><br>
+				<strong>Email:</strong> <%= email %>
+			</li>
+		</script>
+		
 		<script>
-			User = Backbone.Model.extend({
-				initialize:function(){
-					console.log("User model initialized");
-					this.on('change:email', function(){
-						console.log('User email has updated');
-					});
-					this.on('change:username', function(){
-						console.log('Username has updated');
-					});
-				},
-				defaults: {
-					username:"curiousgeorge",
-					email: "curious@george.com"
-				},
-				getEmail:function(){
-					return this.get('email');
-				},
-				setEmail: function(value){
-					this.set({email:value});
-				},
-				getUName: function(){
-					return this.get('username');
-				},
-				setUName: function(value){
-					this.set({username:value});
-				}
-			});
-			
-			var user = new User({username:"Matt", age:12});
-			console.log("username: "+user.getUName());
-			console.log("email: "+user.getEmail());
-			user.setEmail("matt@hardman.com")
-			console.log("username: "+user.getUName());
-			console.log("email: "+user.getEmail());
-			user.setUName("sexypants")
-			console.log("username: "+user.getUName());
-			console.log("email: "+user.getEmail());
-			console.log(user.get('age'));
+			$(function(){
+				var User = Backbone.Model.extend();
+				var UserList = Backbone.Collection.extend({
+					model: User,
+					url: 'users.json'
+				});
+				
+				//users view
+				var UsersView = Backbone.View.extend({
+					template: _.template($('#userlist_template').html()),
+					render: function(ev){
+						_.each(this.model.models, function(user){
+							var username = user.attributes['username'];
+							var email = user.attributes['email'];
+							//Assign template
+							var template = this.template(user.toJSON());
+							$(this.el).append(template);
+						},this);
+						return this;
+					}
+				});
+				
+				var userList = new UserList();
+				
+				//App View
+				var AppView = Backbone.View.extend({
+					el:"body",
+					render: function(){
+						var usersView = new UsersView({model:userList});
+						var usersViewRender = usersView.render().el;
+						$('.users').html(usersViewRender);
+					},
+					initialize: function(){
+						var Options = {};
+						Options.success = this.render;
+						userList.fetch(Options);
+					}
+				});
+				
+				var App = new AppView();
+			})
 		</script>
 	</body>
 </html>
